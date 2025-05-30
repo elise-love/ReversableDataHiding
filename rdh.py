@@ -1,87 +1,115 @@
-# rdh.py
+# rdh.py - Improved Version
 import cv2
 import numpy as np
-# ===== 灰階影像嵌入函式（直方圖位移） =====
+
 def embed_data(grayscaleImg, data_bits, peak):
     """
-    將資料位元嵌入灰階影像。
-    步驟：
-    1. 先將所有 < peak 的像素值 -1（位移避免衝突）
-    2. 從 peak 開始，依序用 data_bits 替換（遇到1時 peak-1，遇到0時 peak 保持）
-    3. 限制像素值在 0~255 並重塑為影像形狀
-    傳回：
-        - 嵌入後的影像
-        - 實際嵌入的位元數
+    將資料位元嵌入灰階影像（改進版）
     """
-
-    #flattens the 2D img matrix into a 1D array(easier to iterate over every pixel)
+    print(f"[DEBUG] Embedding {len(data_bits)} bits using peak {peak}")
+    
+    # Flatten and copy
     img_flat = grayscaleImg.flatten()
-
-    #copy of flattened message(not to mess with the original)
     embedded_img = img_flat.copy()
-
-    #所有 < peak 的像素都減 1
+    
+    # Count available pixels at peak for capacity check
+    peak_pixels = np.sum(img_flat == peak)
+    print(f"[DEBUG] Available peak pixels: {peak_pixels}")
+    
+    if peak_pixels < len(data_bits):
+        print(f"警告：Peak 像素數 ({peak_pixels}) 少於要嵌入的位元數 ({len(data_bits)})")
+        return embedded_img.reshape(grayscaleImg.shape), 0
+    
+    # Step 1: Shift pixels < peak down by 1 to make room
+    shift_count = 0
     for i in range(len(embedded_img)):
-        if embedded_img[i] < peak:
-            embedded_img[i] -= 1 
-
-    # 嵌入資料到原本位於 peak 的位置
-    embedding_bit = 0 
-
+        if embedded_img[i] < peak and embedded_img[i] > 0:  # Avoid going below 0
+            embedded_img[i] -= 1
+            shift_count += 1
+    
+    print(f"[DEBUG] Shifted {shift_count} pixels down")
+    
+    # Step 2: Embed data bits into peak pixels
+    embedding_bit = 0
+    embedded_count = 0
+    
     for i in range(len(embedded_img)):
-        if embedded_img[i] == peak and embedding_bit < len(data_bits):
-            #if the current data bit is [1], set the pixel to peak-1 to represent 1
+        if embedding_bit >= len(data_bits):
+            break
+            
+        # Only embed in pixels that are still at peak value after shifting
+        if img_flat[i] == peak:  # Use original image to identify peak pixels
             if data_bits[embedding_bit] == '1':
-                embedded_img[i] -= 1  
+                embedded_img[i] = peak - 1  # Represent '1' as peak-1
             else:
-                embedded_img[i] = peak
+                embedded_img[i] = peak      # Represent '0' as peak
+            
             embedding_bit += 1
-
-    #after embedding, enure pixel values are valid (0-255) and reshape back to the original img shape
+            embedded_count += 1
+    
+    print(f"[DEBUG] Successfully embedded {embedded_count} bits")
+    
+    # Ensure valid pixel values and reshape
     embedded_img = np.clip(embedded_img, 0, 255).reshape(grayscaleImg.shape)
     
-    #return 1.modified image 2.how many bits able to embed(useful for debugging)
     return embedded_img, embedding_bit
 
-# ===== 彩色影像嵌入（使用 Y 通道） =====
 def embed_data_color(img_color, data_bits, peak):
     """
-    將資料嵌入彩色影像（僅使用 Y 通道）：
-    1. 轉換為 YCrCb 色彩空間，分離 Y、Cr、Cb
-    2. 嵌入資料到 Y 通道
-    3. 合併通道並轉回 BGR
-    傳回：
-        - 嵌入後的彩色影像
-        - 實際嵌入的位元數
+    將資料嵌入彩色影像（改進版）
     """
-    #convert BGR(nomal OpenCV color order) to YCrCb
+    print(f"[DEBUG] Color embedding: {len(data_bits)} bits, peak = {peak}")
+    
+    # Convert to YCrCb
     img_ycrcb = cv2.cvtColor(img_color, cv2.COLOR_BGR2YCrCb)
-
-    #Y:brightness
-    #Cr, Cb: color
-    #split to 3 channels
     Y, Cr, Cb = cv2.split(img_ycrcb)
-
-    #make sure Y channel's data type is 8-bit integers(required by OpenCV)
+    
+    # Ensure correct data type
     if Y.dtype != np.uint8:
         Y = Y.astype(np.uint8)
-
-    # 嵌入
+    
+    # Check histogram and capacity
+    hist = cv2.calcHist([Y], [0], None, [256], [0, 256])
+    capacity = int(hist[peak][0])
+    print(f"[DEBUG] Peak {peak} has {capacity} pixels available")
+    
+    if len(data_bits) > capacity:
+        print(f"錯誤：資料太大無法嵌入。需要 {len(data_bits)} bits，可用 {capacity} bits")
+        return img_color, 0
+    
+    # Embed data
     embedded_Y, used_bits = embed_data(Y, data_bits, peak)
-
-    #keep pixel values valid and ensure data type is correct
     embedded_Y = np.clip(embedded_Y, 0, 255).astype(np.uint8)
-
-    # 合併通道並轉回 BGR
+    
+    # Merge channels and convert back
     embedded_ycrcb = cv2.merge([embedded_Y, Cr, Cb])
     embedded_color = cv2.cvtColor(embedded_ycrcb, cv2.COLOR_YCrCb2BGR)
-
+    
+    print(f"[DEBUG] Embedding completed: {used_bits} bits used")
     return embedded_color, used_bits
 
-"""
-cv2.cvtColor :做色彩空間轉換
-
-cv2.split / cv2.merge :取通道
-
-np.clip 讓數值在範圍內
-"""
+def analyze_image_for_embedding(img_path):
+    """
+    分析影像的嵌入能力
+    """
+    img = cv2.imread(img_path)
+    if img is None:
+        return None
+    
+    img_ycrcb = cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
+    Y = img_ycrcb[:, :, 0]
+    
+    hist = cv2.calcHist([Y], [0], None, [256], [0, 256])
+    peak = int(np.argmax(hist))
+    capacity = int(hist[peak][0])
+    
+    print(f"影像分析結果:")
+    print(f"- Peak 值: {peak}")
+    print(f"- Peak 像素數: {capacity}")
+    print(f"- 最大可嵌入字元數: {capacity // 8}")
+    
+    return {
+        'peak': peak,
+        'capacity': capacity,
+        'max_chars': capacity // 8
+    }

@@ -36,14 +36,14 @@ class MainWindow(QMainWindow):
 
         #icon label settings
         self.icon_label = QLabel(self)
-        self.icon_label.setGeometry(70, 20, 250, 250)
+        self.icon_label.setGeometry(110, 20, 250, 250)
         self.icon1_path = os.path.join(os.path.dirname(__file__),"icons", "icon1.jpg")
         self.icon2_path = os.path.join(os.path.dirname(__file__),"icons",  "icon2.jpg")
         self.set_icon(self.icon1_path)
 
         #mode text settings
         self.modeText = QLabel("Current Mode: Encoding...", self)
-        self.modeText.setGeometry(50, 235, 250, 30)
+        self.modeText.setGeometry(70, 235, 250, 30)
         self.modeText.setAlignment(Qt.AlignCenter)
         self.modeText.setStyleSheet("""
             font-size: 20px; 
@@ -70,7 +70,7 @@ class MainWindow(QMainWindow):
 
         #dashboard settings
         self.dashboard  = QTextEdit(self)
-        self.dashboard.setGeometry(450,40,410,240)
+        self.dashboard.setGeometry(420,40,600,240)
         self.dashboard.setReadOnly(True)
         self.dashboard.setStyleSheet("""
             background-color: rgba(0, 0, 0, 130);
@@ -96,6 +96,7 @@ class MainWindow(QMainWindow):
         self.timer = QTimer(self)  # Timer for line-by-line animation
         self.timer.timeout.connect(self.animate_message)
 
+
     def set_icon(self, path):
         pixmap = QPixmap(path).scaled(160, 160, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.icon_label.setPixmap(pixmap)
@@ -110,6 +111,9 @@ class MainWindow(QMainWindow):
             self.decoding_container.show()
             self.is_encoding = False
             self.dashboard_message_display("Changed mode to decoding","red")
+            # show hint
+            self.dashboard_message_display("Hint: the key to RDH is the peak value of the histogram!","gold")
+
         else:
             self.color_block.setStyleSheet("background-color: rgba(30, 30, 30, 0.9); border-radius: 5px;")
             self.set_icon(self.icon1_path)
@@ -199,22 +203,28 @@ class MainWindow(QMainWindow):
             #display debug info
             debug_info = (
                 f"<br>Used bits: {used_bits} / Capacity: {capacity} ({(used_bits / capacity * 100):.2f}%)"
-                f"<br>Peak: {peak}"
                 f"<br>Full data bits length: {len(full_data_bits)}"
                 f"<br>Image path: {self.current_encoding_image_path}"
             )
-            self.dashboard_message_display(debug_info,"gold")
+            self.dashboard_message_display(debug_info,"white")
+
+            #show peak value
+            self.dashboard_message_display(f"Peak: {peak}", "gold")
 
             #transmit emcoded img to decode mode
             self.encoded_pixmap_transmission = embedded_pixmap
             self.decoding_container.dec_image_preview.setPixmap(self.encoded_pixmap_transmission)
             self.current_decoding_image_path = embedded_path
-            self.dashboard_message_display("Encoded image transmitted to decoding mode","grey")
+            self.dashboard_message_display("Encoded image transmitted to decoding mode","green")
+
+            #change mode hint
+            self.dashboard_message_display("CLICK TWICE on the Spiderman icon to change MODE!","green")
 
         except Exception as e:
             self.dashboard_message_display("An error occurred during encoding","lightpink")
 
     def run_decoding(self):
+
         try:
             if not self.current_decoding_image_path:
                 self.dashboard_message_display("Please select an image first!", "red")
@@ -225,9 +235,14 @@ class MainWindow(QMainWindow):
                 self.dashboard_message_display("Failed to load image!", "red")
                 return
 
+            #get peak value from input box
+            manual_peak_text = self.decoding_container.dec_input_box.text().strip()
+            manual_peak = int(manual_peak_text) if manual_peak_text.isdigit() else None
+
             self.dashboard_message_display("Starting decoding process...", "grey")
 
-            result, error = crdh.decode_image(img_color)
+            # Pass the manual_peak to crdh.decode_image, using it as the peak if provided
+            result, error = crdh.decode_image(img_color, manual_peak=manual_peak)
 
             if error:
                 self.dashboard_message_display(error, "red")
@@ -236,7 +251,7 @@ class MainWindow(QMainWindow):
             self.decoding_container.dec_decoded_text.setText(result['message'])
             self.dashboard_message_display(f"Decoded message: {result['message']}", "grey")
 
-            #restore img
+            # restore img
             restored_img = result['restored_img']
             restored_path = os.path.join(os.path.dirname(__file__), "tempFile", "restored_image.png")
             cv2.imwrite(restored_path, restored_img)
@@ -245,10 +260,10 @@ class MainWindow(QMainWindow):
             self.decoding_container.dec_decoded_image.setPixmap(restored_pixmap)
             self.dashboard_message_display("Restored image displayed.", "grey")
 
-            #update histogram
+            # update histogram
             self.decoding_container.dec_histograms[0].set_histogram_data(
                 result['hist_embedded'], title="Embedded Y Histogram",
-                color=QColor(255, 120, 120,int(0.7*255)), peak=result['extracted_peak']
+                color=QColor(255, 120, 120, int(0.7*255)), peak=result['extracted_peak']
             )
             self.dashboard_message_display("Embedded Y histogram updated.", "grey")
 
@@ -257,14 +272,19 @@ class MainWindow(QMainWindow):
                 color=QColor(100, 150, 255), peak=result['extracted_peak']
             )
             self.dashboard_message_display("Restored Y histogram updated.", "grey")
-        
-            #show decoded info
-            for log in result.get('logs',[]):
-                self.dashboard_message_display(log,"gold")
+    
+            # show decoded info
+            for log in result.get('logs', []):
+                self.dashboard_message_display(log, "white")
             self.decoding_container.dec_decoded_text.setText(result['message'])
-        
+
+            #show decoded message
+            self.dashboard_message_display(f"Decoded message: {result['message']}","red")
+
         except Exception as e:
             self.dashboard_message_display(f"Error: {str(e)}", "red")
+
+
 
     def mousePressEvent(self, e):
         if e.button() == Qt.LeftButton:

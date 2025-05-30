@@ -1,4 +1,5 @@
-﻿# 🕷️ Steganography: Tool to Hide Messages in Images 🕷️
+﻿# 🕷️ Steganography:Reversable Data Hiding 🕷️
+## 🕷️ A Tool to Hide Messages in Images 🕷️
 
 Welcome to this **Steganography Tool** (Spiderman themed): a PyQt5 application that lets you hide messages in images and reveal them later, all with a dash of style! 🌷✨
 
@@ -29,8 +30,9 @@ __init__.py
 ### Step 3️⃣ Decoding Mode
 1. Switch to decoding by double-clicking the Spiderman icon.
 2. Select the image with the hidden message. *(Your previous encoded image will be there by default)*
-3. Click **Run**, and see your message declassify!
-4. The restored image and histograms are updated.
+3. Enter key to unlock message! (Enter peak level, shown in dashboard)
+4. Click **Run**, and see your message declassify!
+5. The restored image and histograms are updated.
 
 ## 📁 Project Structure
 
@@ -65,3 +67,8 @@ Thank you for checking out this **Steganography Tool**. I hope you find it intri
 ---
 
 🕷️🕷️🕷️
+Stuff yet to update:
+1.quit button
+2.sizeable feature
+3.drop box
+4.histogram pic larger

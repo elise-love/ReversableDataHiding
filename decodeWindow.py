@@ -63,6 +63,22 @@ class DecodeWindow(QFrame):
 
         input_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
+        # Input box for peak (moved to above Run button)
+        self.dec_input_box = QLineEdit()
+        self.dec_input_box.setPlaceholderText("Insert Key ?? :)))))")
+        self.dec_input_box.setFixedSize(250, 35)
+        self.dec_input_box.setStyleSheet("""
+            background-color: rgba(60, 40, 40, 0.7);
+            border: 1px solid rgba(230, 230, 230, 0.9);
+            border-radius: 8px;
+            font-size: 15px;
+            font-family: 'Comic Sans MS';
+            color: rgba(230, 230, 230, 0.9);
+            padding-left: 10px;
+        """)
+        input_layout.addWidget(self.dec_input_box, alignment=Qt.AlignCenter)
+
+        # Run button
         self.dec_run_btn = QPushButton("Run")
         self.dec_run_btn.setFixedSize(200, 40)
         self.dec_run_btn.setStyleSheet("""
@@ -90,7 +106,7 @@ class DecodeWindow(QFrame):
         decoded_layout.setSpacing(10)
         decoded_layout.setAlignment(Qt.AlignCenter)
 
-        #Tile text
+        # Title text
         decoded_title = QLabel("Decoded Image")
         decoded_title.setStyleSheet("""
             font-size:16px;
@@ -99,7 +115,7 @@ class DecodeWindow(QFrame):
         """)
         decoded_layout.addWidget(decoded_title, alignment=Qt.AlignCenter)
         
-        #bckgrnd
+        # Decoded image preview
         self.dec_decoded_image = QLabel()
         self.dec_decoded_image.setFixedSize(350, 350)
         self.dec_decoded_image.setStyleSheet("""
@@ -112,21 +128,45 @@ class DecodeWindow(QFrame):
 
         decoded_layout.addItem(QSpacerItem(20, 15, QSizePolicy.Minimum, QSizePolicy.Fixed))
 
-        #decoded text
+        # Decoded text output in scrollable area
         self.dec_decoded_text = QLabel("Decoded message will appear here")
-        self.dec_decoded_text.setFixedSize(350, 60)
         self.dec_decoded_text.setWordWrap(True)
-        self.dec_decoded_text.setAlignment(Qt.AlignCenter)
+        self.dec_decoded_text.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.dec_decoded_text.setStyleSheet("""
             font-size: 17px;
             font-family: 'Comic Sans MS';
             color: rgba(230, 230, 230, 0.8);
             background-color: rgba(60, 40, 40, 0.6);
-            border: 1px solid rgba(230, 230, 230, 0.9);
-            border-radius: 8px;
-            padding: 10px;
+            border: none;
+            padding: 8px;
         """)
-        decoded_layout.addWidget(self.dec_decoded_text, alignment=Qt.AlignCenter)
+
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setFixedSize(350, 70)
+        scroll_area.setWidget(self.dec_decoded_text)
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                border: 1px solid rgba(230, 230, 230, 0.9);
+                border-radius: 8px;
+                background-color: transparent;
+            }
+            QScrollBar:vertical {
+                width: 8px;
+                background: rgba(0, 0, 0, 0);
+            }
+            QScrollBar::handle:vertical {
+                background: rgba(255, 255, 255, 0.3);
+                border-radius: 4px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background: rgba(255, 255, 255, 0.6);
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0;
+            }
+        """)
+        decoded_layout.addWidget(scroll_area, alignment=Qt.AlignCenter)
 
         decoded_panel.setLayout(decoded_layout)
 

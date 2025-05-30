@@ -9,6 +9,36 @@ import matplotlib.pyplot as plt
 import rdh
 from histogram_widget import HistogramWidget
 
+
+#draggable Qlabel
+class DraggableLabel(QLabel):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.parent = parent
+        self.setAcceptDrops(True)
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        if event.mimeData().hasUrls():
+            file_path = event.mimeData().urls()[0].toLocalFile()
+            if file_path.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
+                pixmap = QPixmap(file_path)
+                self.setPixmap(pixmap.scaled(
+                    self.width(),
+                    self.height(),
+                    Qt.KeepAspectRatio,
+                    Qt.SmoothTransformation
+                ))
+                # 把檔案路徑傳給 parent 紀錄
+                if self.parent:
+                    self.parent.parent.current_encoding_image_path = file_path
+
+
 class EncodeWindow(QFrame):
     def __init__(self, parent=None, mode="encode"):
         super().__init__(parent)
@@ -33,7 +63,8 @@ class EncodeWindow(QFrame):
         input_layout.setAlignment(Qt.AlignTop)
 
         #image drop and display box
-        self.enc_image_preview = QLabel(".. or Drop images here")
+        self.enc_image_preview = DraggableLabel(self)
+        self.enc_image_preview.setText(".. or Drop images here")
         self.enc_image_preview.setFixedSize(300, 300)
         self.enc_image_preview.setAlignment(Qt.AlignCenter)
         self.enc_image_preview.setStyleSheet("""
