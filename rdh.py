@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 # ===== 灰階影像嵌入函式（直方圖位移） =====
-def embed_data(img, data_bits, peak):
+def embed_data(grayscaleImg, data_bits, peak):
     """
     將資料位元嵌入灰階影像。
     步驟：
@@ -13,26 +13,35 @@ def embed_data(img, data_bits, peak):
         - 嵌入後的影像
         - 實際嵌入的位元數
     """
-    img_flat = img.flatten()
+
+    #flattens the 2D img matrix into a 1D array(easier to iterate over every pixel)
+    img_flat = grayscaleImg.flatten()
+
+    #copy of flattened message(not to mess with the original)
     embedded_img = img_flat.copy()
 
-    # 位移左側像素避免衝突: 所有 < peak 的像素都減 1
+    #所有 < peak 的像素都減 1
     for i in range(len(embedded_img)):
         if embedded_img[i] < peak:
             embedded_img[i] -= 1 
 
     # 嵌入資料到原本位於 peak 的位置
-    data_index = 0
-    for i in range(len(embedded_img)):
-        if embedded_img[i] == peak and data_index < len(data_bits):
-            if data_bits[data_index] == '1':
-                embedded_img[i] -= 1  # 資料=1 -> peak-1
-            else:
-                embedded_img[i] = peak  # 資料=0 -> peak 維持
-            data_index += 1
+    embedding_bit = 0 
 
-    embedded_img = np.clip(embedded_img, 0, 255).reshape(img.shape)
-    return embedded_img, data_index
+    for i in range(len(embedded_img)):
+        if embedded_img[i] == peak and embedding_bit < len(data_bits):
+            #if the current data bit is [1], set the pixel to peak-1 to represent 1
+            if data_bits[embedding_bit] == '1':
+                embedded_img[i] -= 1  
+            else:
+                embedded_img[i] = peak
+            embedding_bit += 1
+
+    #after embedding, enure pixel values are valid (0-255) and reshape back to the original img shape
+    embedded_img = np.clip(embedded_img, 0, 255).reshape(grayscaleImg.shape)
+    
+    #return 1.modified image 2.how many bits able to embed(useful for debugging)
+    return embedded_img, embedding_bit
 
 # ===== 彩色影像嵌入（使用 Y 通道） =====
 def embed_data_color(img_color, data_bits, peak):
@@ -45,15 +54,22 @@ def embed_data_color(img_color, data_bits, peak):
         - 嵌入後的彩色影像
         - 實際嵌入的位元數
     """
+    #convert BGR(nomal OpenCV color order) to YCrCb
     img_ycrcb = cv2.cvtColor(img_color, cv2.COLOR_BGR2YCrCb)
+
+    #Y:brightness
+    #Cr, Cb: color
+    #split to 3 channels
     Y, Cr, Cb = cv2.split(img_ycrcb)
 
-    # 確保 Y 通道是 uint8
+    #make sure Y channel's data type is 8-bit integers(required by OpenCV)
     if Y.dtype != np.uint8:
         Y = Y.astype(np.uint8)
 
     # 嵌入
     embedded_Y, used_bits = embed_data(Y, data_bits, peak)
+
+    #keep pixel values valid and ensure data type is correct
     embedded_Y = np.clip(embedded_Y, 0, 255).astype(np.uint8)
 
     # 合併通道並轉回 BGR
@@ -61,3 +77,11 @@ def embed_data_color(img_color, data_bits, peak):
     embedded_color = cv2.cvtColor(embedded_ycrcb, cv2.COLOR_YCrCb2BGR)
 
     return embedded_color, used_bits
+
+"""
+cv2.cvtColor :做色彩空間轉換
+
+cv2.split / cv2.merge :取通道
+
+np.clip 讓數值在範圍內
+"""

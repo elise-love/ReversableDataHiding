@@ -3,6 +3,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 
+from histogram_widget import HistogramWidget
+
 class DecodeWindow(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -88,6 +90,7 @@ class DecodeWindow(QFrame):
         decoded_layout.setSpacing(10)
         decoded_layout.setAlignment(Qt.AlignCenter)
 
+        #Tile text
         decoded_title = QLabel("Decoded Image")
         decoded_title.setStyleSheet("""
             font-size:16px;
@@ -95,7 +98,8 @@ class DecodeWindow(QFrame):
             color: rgba(230, 230, 230, 0.9);
         """)
         decoded_layout.addWidget(decoded_title, alignment=Qt.AlignCenter)
-
+        
+        #bckgrnd
         self.dec_decoded_image = QLabel()
         self.dec_decoded_image.setFixedSize(350, 350)
         self.dec_decoded_image.setStyleSheet("""
@@ -108,12 +112,13 @@ class DecodeWindow(QFrame):
 
         decoded_layout.addItem(QSpacerItem(20, 15, QSizePolicy.Minimum, QSizePolicy.Fixed))
 
+        #decoded text
         self.dec_decoded_text = QLabel("Decoded message will appear here")
         self.dec_decoded_text.setFixedSize(350, 60)
         self.dec_decoded_text.setWordWrap(True)
         self.dec_decoded_text.setAlignment(Qt.AlignCenter)
         self.dec_decoded_text.setStyleSheet("""
-            font-size: 14px;
+            font-size: 17px;
             font-family: 'Comic Sans MS';
             color: rgba(230, 230, 230, 0.8);
             background-color: rgba(60, 40, 40, 0.6);
@@ -134,23 +139,24 @@ class DecodeWindow(QFrame):
 
         self.dec_histograms = []
         hist_titles = ["Original Histogram", "Shifted Histogram"]
+        
         for i, title_text in enumerate(hist_titles):
             label = QLabel(title_text)
             label.setStyleSheet("""
                 font-size:16px;
                 font-family:'Comic Sans MS';
-                color: rgba(230, 230, 230, 0.9);
+                color: white;
             """)
             hist_layout.addWidget(label, alignment=Qt.AlignCenter)
 
-            hist = QLabel()
+            hist = HistogramWidget(mode="decode")
             hist.setFixedSize(350, 180)
             hist.setStyleSheet("""
-                border: 1px solid rgba(230, 230, 230, 0.9);
+                border: 1px solid white;
                 background-color: rgba(60, 40, 40, 0.8);
                 border-radius: 10px;
             """)
-            hist.setAlignment(Qt.AlignCenter)
+            
             hist_layout.addWidget(hist, alignment=Qt.AlignCenter)
             self.dec_histograms.append(hist)
 

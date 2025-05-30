@@ -1,5 +1,5 @@
-# __init__.py
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QFileDialog, QGraphicsOpacityEffect,QTextEdit
+ï»¿#__init__.py
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QFileDialog, QGraphicsOpacityEffect, QTextEdit
 from PyQt5.QtCore import Qt, QPoint, QTimer, QPropertyAnimation, QEasingCurve
 from PyQt5.QtGui import QPixmap, QFont, QLinearGradient, QBrush, QPainter, QPen, QColor
 import sys, os
@@ -56,7 +56,6 @@ class MainWindow(QMainWindow):
         self.mode_animation.setLoopCount(-1)  # Infinite loop
         self.mode_animation.start()
 
-
         #elements container settings
         self.encoding_container = EncodeWindow(self)
         self.decoding_container = DecodeWindow(self)
@@ -85,6 +84,10 @@ class MainWindow(QMainWindow):
         #encode image transmission
         self.encoded_pixmap_transmission = None
 
+        # Animation attributes
+        self.message_queue = []  # Queue to store messages and their colors
+        self.timer = QTimer(self)  # Timer for line-by-line animation
+        self.timer.timeout.connect(self.animate_message)
 
     def set_icon(self, path):
         pixmap = QPixmap(path).scaled(160, 160, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -110,28 +113,19 @@ class MainWindow(QMainWindow):
             self.is_encoding = True
             self.dashboard_message_display("Changed mode to encoding","lightpink")
             
-  
-
     def select_image(self, mode):
-        path, _ = QFileDialog.getOpenFileName(       #path: return user's chosen path(if canceled than return empty string), _:ignoreÀÉ®×¿z¿ï¾¹¦^¶Ç­È
-            self,                                    #µøµ¡¤÷ª«¥ó¡A½T«O¹ï¸Ü®Ø¬°¥Dµøµ¡¤lµøµ¡
-            "Select Image",                          #window title
-            "",                                      #¹w³]¸ô®|(ªÅ¦r¦ê = ¨Ï¥Î¨t²Î¹w³])
-            "Images (*.png *.jpg *.jpeg *.bmp)"      #ÀÉ®×Ãþ«¬¹LÂo¾¹
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Image",
+            "",
+            "Images (*.png *.jpg *.jpeg *.bmp)"
         )
-        
-        #if user selected an img
         if path:
             if mode == 'encoding':
-
-                #save teh selected img path
                 self.current_encoding_image_path = path
-
-                #create QPixmap obj and scale it to diaplay in the preview area
                 pixmap = QPixmap(path).scaled(300, 300, Qt.KeepAspectRatio, Qt.SmoothTransformation)
                 self.encoding_container.enc_image_preview.setPixmap(pixmap)
-                self.encoding_container.enc_image_preview.setText("")#clear text
-
+                self.encoding_container.enc_image_preview.setText("")
             else:
                 self.current_decoding_image_path = path
                 pixmap = QPixmap(path).scaled(280, 280, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -140,70 +134,72 @@ class MainWindow(QMainWindow):
 
     def run_encoding(self):
         try:
-            #step1: check of the image path is there
+            #image selection
             if not self.current_encoding_image_path:            
                 self.dashboard_message_display("Please select an image first!", "lightpink")
                 return
-
-            #step2: check if the encoded text is there 
             message = self.encoding_container.enc_textbox.text().strip()
+
+            #input message
             if not message:
                 self.dashboard_message_display("Please enter text to encode!", "lightpink")
                 return
-            
-            #step3: turn the message to ¤G¶i¦ì(¨C­Ó¦r8 bits)
-            #ord(c): §â³æ¤@¦r¤¸ c Âà¦¨¹ïÀ³ªº ASCII / Unicode ¼Æ­È¡]int¡^
-            #format(..., '08b'): int Âà¦¨ 8 bits ªº¤G¶i¦ìstring
-            #for c in message: ¹ï message ¤¤¨C­Ó¦r¤¸°õ¦æÂà´«
-            #''.join(...): §â©Ò¦³¤G¶i¦ì¦r¦ê±µ¦b¤@°_¡A§Î¦¨§¹¾ãªºÁôÂÃ¸ê®Æ bit stream
+
+            #char to bits
             message_bits = ''.join(format(ord(c), '08b') for c in message)
-            
-            #step4: read color image (BGR ®æ¦¡)
+
+            #image path variable
             img_color = cv2.imread(self.current_encoding_image_path)
+
             if img_color is None:
                 self.dashboard_message_display("Failed to load image!","lightpink")
                 return
+
+            self.dashboard_message_display("Load image successful!","grey")
+
 
             img_ycrcb = cv2.cvtColor(img_color, cv2.COLOR_BGR2YCrCb)
             img_y = img_ycrcb[:, :, 0]
             hist = cv2.calcHist([img_y], [0], None, [256], [0, 256])
             peak = int(np.argmax(hist))
-
             peak_bits = format(peak, '08b')
             length_prefix = format(len(message_bits), '016b')
             full_data_bits = peak_bits + length_prefix + message_bits
-
             capacity = int(hist[peak][0])
             if len(full_data_bits) > capacity:
                 self.dashboard_message_display("Error", f"Data too large to embed.\nRequired: {len(full_data_bits)} bits, Available: {capacity} bit","blue")
                 return
-
+            self.dashboard_message_display("Data embedded","grey")
             embedded_color, used_bits = rdh.embed_data_color(img_color, full_data_bits, peak)
             embedded_path = os.path.join(os.path.dirname(__file__), "tempFile", "temp_embedded.png")
             cv2.imwrite(embedded_path, embedded_color)
-
+            debug_info = (
+                f"Used bits: {used_bits} / Capacity: {capacity} ({(used_bits / capacity * 100):.2f}%)\n"
+                f"Peak: {peak}\n"
+                f"Full data bits length: {len(full_data_bits)}\n"
+                f"Image path: {self.current_encoding_image_path}"
+            )
+            self.dashboard_message_display(debug_info, "grey")
             embedded_pixmap = QPixmap(embedded_path).scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.encoding_container.enc_encoded_image.setPixmap(embedded_pixmap)
             self.dashboard_message_display("Embedding image completed!","grey")
-
-            # Calculate the embedded image histogram
             embedded_ycrcb = cv2.cvtColor(embedded_color, cv2.COLOR_BGR2YCrCb)
             embedded_y = embedded_ycrcb[:, :, 0]
             hist_embedded = cv2.calcHist([embedded_y], [0], None, [256], [0, 256])
 
-            # Display the histograms directly in the HistogramWidgets
+            #paint original histogram
             self.encoding_container.enc_histograms[0].set_histogram_data(hist, title="Original Y Histogram", color=QColor(100, 150, 255), peak=peak)
             self.dashboard_message_display("Original histogram successfully painted!", "grey")
-            
+
+            #paint shifted histogram
             self.encoding_container.enc_histograms[1].set_histogram_data(hist_embedded, title="Embedded Y Histogram", color=QColor(255, 100, 100), peak=peak)
             self.dashboard_message_display("Shifted histogram successfully painted!", "grey")
 
-
-            #encoded image transmission
+            #transmit emcoded img to decode mode
             self.encoded_pixmap_transmission = embedded_pixmap
             self.decoding_container.dec_image_preview.setPixmap(self.encoded_pixmap_transmission)
+            self.current_decoding_image_path = embedded_path
             self.dashboard_message_display("Encoded image transmitted to decoding mode","grey")
-
 
         except Exception as e:
             self.dashboard_message_display("An error occurred during encoding","lightpink")
@@ -211,32 +207,54 @@ class MainWindow(QMainWindow):
     def run_decoding(self):
         try:
             if not self.current_decoding_image_path:
-                self.dashboard_message_display("Please select an image first!","red")
+                self.dashboard_message_display("Please select an image first!", "red")
                 return
 
             img_color = cv2.imread(self.current_decoding_image_path)
-            self.dashboard_message_display("Image selection successufl!","grey")
-
             if img_color is None:
-                self.dashboard_message_display("Failed to load image!","red")
+                self.dashboard_message_display("Failed to load image!", "red")
                 return
 
-            decoded_pixmap = QPixmap(self.current_decoding_image_path).scaled(350, 350, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            self.decoding_container.dec_decoded_image.setPixmap(decoded_pixmap)
-            self.dashboard_message_display("Load image successful!","grey")
+            self.dashboard_message_display("Starting decoding process...", "grey")
 
-            self.decoding_container.dec_decoded_text.setText("Decoding functionality not implemented yet.")
+            result, error = crdh.decode_image(img_color)
 
-            img_ycrcb = cv2.cvtColor(img_color, cv2.COLOR_BGR2YCrCb)
-            img_y = img_ycrcb[:, :, 0]
-            hist = cv2.calcHist([img_y], [0], None, [256], [0, 256])
+            if error:
+                self.dashboard_message_display(error, "red")
+                return
 
-            # Display the histogram in the decoding histogram widget
-            self.decoding_container.dec_histogram.set_histogram_data(hist, title="Decoded Y Histogram", color=QColor(100, 150, 255))
+            self.decoding_container.dec_decoded_text.setText(result['message'])
+            self.dashboard_message_display(f"Decoded message: {result['message']}", "grey")
 
+            #restore img
+            restored_img = result['restored_img']
+            restored_path = os.path.join(os.path.dirname(__file__), "tempFile", "restored_image.png")
+            cv2.imwrite(restored_path, restored_img)
+
+            restored_pixmap = QPixmap(restored_path).scaled(350, 350, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.decoding_container.dec_decoded_image.setPixmap(restored_pixmap)
+            self.dashboard_message_display("Restored image displayed.", "grey")
+
+            #update histogram
+            self.decoding_container.dec_histograms[0].set_histogram_data(
+                result['hist_embedded'], title="Embedded Y Histogram",
+                color=QColor(255, 100, 100), peak=result['extracted_peak']
+            )
+            self.dashboard_message_display("Embedded Y histogram updated.", "grey")
+
+            self.decoding_container.dec_histograms[1].set_histogram_data(
+                result['hist_restored'], title="Restored Y Histogram",
+                color=QColor(100, 150, 255)
+            )
+            self.dashboard_message_display("Restored Y histogram updated.", "grey")
+        
+            #show decoded info
+            for log in result.get('logs',[]):
+                self.dashboard_message_display(log,"white")
+            self.decoding_container.dec_decoded_text.setText(result['message'])
+        
         except Exception as e:
-            self.dashboard_message_display("An error occurred during encoding","red")
-
+            self.dashboard_message_display(f"Error: {str(e)}", "red")
 
     def mousePressEvent(self, e):
         if e.button() == Qt.LeftButton:
@@ -250,23 +268,30 @@ class MainWindow(QMainWindow):
     def mouseReleaseEvent(self, e):
         self.mouse_is_dragging = False
 
-    #display words on dashboard
     def dashboard_message_display(self, message, color="grey"):
         # Get current timestamp
         timestamp = datetime.datetime.now().strftime("[%H:%M:%S]")
-
-        # Apply color tag for HTML if needed
+        # Apply color tag for HTML
         formatted_message = f"<span style='color:{color}'>{timestamp} {message}</span>"
+        # Add to message queue
+        self.message_queue.append(formatted_message)
+        # Start animation if not already running
+        if not self.timer.isActive():
+            self.timer.start(500)  # 500ms delay between lines
 
-        # Append to existing text
-        self.dashboard.append(formatted_message)
-
-        # Optional: Auto-scroll to bottom
-        self.dashboard.verticalScrollBar().setValue(self.dashboard.verticalScrollBar().maximum())
-
+    def animate_message(self):
+        # Display the next message in the queue
+        if self.message_queue:
+            message = self.message_queue.pop(0)
+            self.dashboard.append(message)
+            # Auto-scroll to bottom
+            self.dashboard.verticalScrollBar().setValue(self.dashboard.verticalScrollBar().maximum())
+        else:
+            # Stop timer if queue is empty
+            self.timer.stop()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
-    sys.exit(app.exec_()) 
+    sys.exit(app.exec_())

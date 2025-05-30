@@ -10,7 +10,7 @@ import rdh
 from histogram_widget import HistogramWidget
 
 class EncodeWindow(QFrame):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, mode="encode"):
         super().__init__(parent)
         self.parent = parent
         self.setGeometry(50, 300, 1300, 550)
@@ -135,7 +135,7 @@ class EncodeWindow(QFrame):
             """)
             hist_layout.addWidget(label, alignment=Qt.AlignCenter)
 
-            hist_widget = HistogramWidget()  # 改成 HistogramWidget
+            hist_widget = HistogramWidget()  #改成 HistogramWidget
             hist_widget.setFixedSize(400, 200)
             hist_layout.addWidget(hist_widget, alignment=Qt.AlignCenter)
             self.enc_histograms.append(hist_widget)
