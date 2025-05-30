@@ -29,7 +29,10 @@ class MainWindow(QMainWindow):
         #background color settings
         self.color_block = QWidget(self)
         self.color_block.setGeometry(0, 0, 1400, 900)
-        self.color_block.setStyleSheet("background-color: rgba(30, 30, 30, 0.9); border-radius: 5px;")
+        self.color_block.setStyleSheet("""
+            background-color: rgba(30, 30, 30, 0.9); 
+            border-radius: 5px;
+            """)
 
         #icon label settings
         self.icon_label = QLabel(self)
@@ -42,7 +45,11 @@ class MainWindow(QMainWindow):
         self.modeText = QLabel("Current Mode: Encoding...", self)
         self.modeText.setGeometry(50, 235, 250, 30)
         self.modeText.setAlignment(Qt.AlignCenter)
-        self.modeText.setStyleSheet("font-size: 20px; color: rgba(255, 105, 180, 0.9); font-family:'Comic Sans MS';")
+        self.modeText.setStyleSheet("""
+            font-size: 20px; 
+            color: rgba(255, 105, 180, 0.9); 
+            font-family:'Comic Sans MS';
+            """)
         
         # Setup fade-in / fade-out animation
         self.mode_opacity_effect = QGraphicsOpacityEffect()
@@ -238,13 +245,13 @@ class MainWindow(QMainWindow):
             #update histogram
             self.decoding_container.dec_histograms[0].set_histogram_data(
                 result['hist_embedded'], title="Embedded Y Histogram",
-                color=QColor(255, 100, 100), peak=result['extracted_peak']
+                color=QColor(255, 100, 100,int(0.7*255)), peak=result['extracted_peak']
             )
             self.dashboard_message_display("Embedded Y histogram updated.", "grey")
 
             self.decoding_container.dec_histograms[1].set_histogram_data(
                 result['hist_restored'], title="Restored Y Histogram",
-                color=QColor(100, 150, 255)
+                color=QColor(100, 150, 255), peak=result['extracted_peak']
             )
             self.dashboard_message_display("Restored Y histogram updated.", "grey")
         

@@ -5,11 +5,12 @@ Welcome to this **Steganography Tool** (Spiderman themed): a PyQt5 application t
 ## 💖 Features
 
 - **✨ Dual Modes**: Switch between modes by double-clicking the spiderman pic!
-- **🌺 Encoding Mode**: Hide your secret text in an image, like tucking a love note in a secret desk.
-- **🌸 Decoding Mode**: Reveal the hidden message and restore the image's purity.
-- **✨ Dashboard Messages**: Every step you take is celebrated with a line-by-line animated log terminal.
-- **✨ Seamless Mode Switching**: Double-click the icon to toggle between Encoding and Decoding modes — it's as fun as switching outfits!
-- **✨ Histograms**: View the original and modified histograms of the Y channel, with charming color themes. The peak bar is golden colored.
+- **🐈 Encoding Mode**: Hide your secret text in an image, like tucking a love note in a secret desk.
+- **🐈‍ Decoding Mode**: Reveal the hidden message and restore the image's purity.
+- **💌 Dashboard Messages**: Every step you take is celebrated with a line-by-line animated log terminal.
+- **🐈🐈‍ Seamless Mode Switching**: Double-click the icon to toggle between Encoding and Decoding modes — it's as fun as switching outfits!
+- **📈 Histograms**: View the original and modified histograms of the Y channel, with charming color themes. The peak bar is golden colored.
+- **💫 Draggable**: CLick and hold on to the color block background and you can drag the window anywhere~~~~
 
 ## 🌷 How to Use
 

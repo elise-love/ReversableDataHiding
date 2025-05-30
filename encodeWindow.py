@@ -32,6 +32,7 @@ class EncodeWindow(QFrame):
         input_layout.setSpacing(15)
         input_layout.setAlignment(Qt.AlignTop)
 
+        #image drop and display box
         self.enc_image_preview = QLabel(".. or Drop images here")
         self.enc_image_preview.setFixedSize(300, 300)
         self.enc_image_preview.setAlignment(Qt.AlignCenter)
@@ -45,6 +46,7 @@ class EncodeWindow(QFrame):
         """)
         input_layout.addWidget(self.enc_image_preview, alignment=Qt.AlignCenter)
 
+        #select img button
         self.enc_select_btn = QPushButton("Select Image")
         self.enc_select_btn.setFixedSize(200, 40)
         self.enc_select_btn.setStyleSheet("""
@@ -63,6 +65,7 @@ class EncodeWindow(QFrame):
         self.enc_select_btn.clicked.connect(lambda: self.parent.select_image('encoding'))
         input_layout.addWidget(self.enc_select_btn, alignment=Qt.AlignCenter)
 
+        #QLineEdit obj to input encode message
         self.enc_textbox = QLineEdit()
         self.enc_textbox.setPlaceholderText("Enter text to encode")
         self.enc_textbox.setFixedSize(300, 40)
@@ -77,6 +80,7 @@ class EncodeWindow(QFrame):
         """)
         input_layout.addWidget(self.enc_textbox, alignment=Qt.AlignCenter)
 
+        #run button
         self.enc_run_btn = QPushButton("Run")
         self.enc_run_btn.setFixedSize(200, 40)
         self.enc_run_btn.setStyleSheet("""
@@ -119,7 +123,7 @@ class EncodeWindow(QFrame):
 
         encoded_panel.setLayout(encoded_layout)
 
-        # Right panel (histograms)
+        # Right panel for histograms
         hist_panel = QFrame()
         hist_panel.setStyleSheet("background-color: transparent;")
         hist_layout = QVBoxLayout()
@@ -131,7 +135,7 @@ class EncodeWindow(QFrame):
             label.setStyleSheet("""
                 font-size:16px;
                 font-family:'Comic Sans MS';
-                color: rgba(255, 105, 180, 0.9);
+                color: rgba(255, 105, 180, 0.7);
             """)
             hist_layout.addWidget(label, alignment=Qt.AlignCenter)
 
