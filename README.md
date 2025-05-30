@@ -1,4 +1,4 @@
-﻿# 🌸 Steganography: Tool to Hide Messages in Images 🌸
+﻿# 🕷️ Steganography: Tool to Hide Messages in Images 🕷️
 
 Welcome to this **Steganography Tool** (Spiderman themed): a PyQt5 application that lets you hide messages in images and reveal them later, all with a dash of style! 🌷✨
 
