@@ -180,13 +180,7 @@ class MainWindow(QMainWindow):
             embedded_color, used_bits = rdh.embed_data_color(img_color, full_data_bits, peak)
             embedded_path = os.path.join(os.path.dirname(__file__), "tempFile", "temp_embedded.png")
             cv2.imwrite(embedded_path, embedded_color)
-            debug_info = (
-                f"Used bits: {used_bits} / Capacity: {capacity} ({(used_bits / capacity * 100):.2f}%)\n"
-                f"Peak: {peak}\n"
-                f"Full data bits length: {len(full_data_bits)}\n"
-                f"Image path: {self.current_encoding_image_path}"
-            )
-            self.dashboard_message_display(debug_info, "grey")
+
             embedded_pixmap = QPixmap(embedded_path).scaled(400, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation)
             self.encoding_container.enc_encoded_image.setPixmap(embedded_pixmap)
             self.dashboard_message_display("Embedding image completed!","grey")
@@ -201,6 +195,15 @@ class MainWindow(QMainWindow):
             #paint shifted histogram
             self.encoding_container.enc_histograms[1].set_histogram_data(hist_embedded, title="Embedded Y Histogram", color=QColor(255, 100, 100), peak=peak)
             self.dashboard_message_display("Shifted histogram successfully painted!", "grey")
+
+            #display debug info
+            debug_info = (
+                f"<br>Used bits: {used_bits} / Capacity: {capacity} ({(used_bits / capacity * 100):.2f}%)"
+                f"<br>Peak: {peak}"
+                f"<br>Full data bits length: {len(full_data_bits)}"
+                f"<br>Image path: {self.current_encoding_image_path}"
+            )
+            self.dashboard_message_display(debug_info,"gold")
 
             #transmit emcoded img to decode mode
             self.encoded_pixmap_transmission = embedded_pixmap
@@ -245,7 +248,7 @@ class MainWindow(QMainWindow):
             #update histogram
             self.decoding_container.dec_histograms[0].set_histogram_data(
                 result['hist_embedded'], title="Embedded Y Histogram",
-                color=QColor(255, 100, 100,int(0.7*255)), peak=result['extracted_peak']
+                color=QColor(255, 120, 120,int(0.7*255)), peak=result['extracted_peak']
             )
             self.dashboard_message_display("Embedded Y histogram updated.", "grey")
 
@@ -257,7 +260,7 @@ class MainWindow(QMainWindow):
         
             #show decoded info
             for log in result.get('logs',[]):
-                self.dashboard_message_display(log,"white")
+                self.dashboard_message_display(log,"gold")
             self.decoding_container.dec_decoded_text.setText(result['message'])
         
         except Exception as e:

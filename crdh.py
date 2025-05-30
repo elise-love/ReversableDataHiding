@@ -53,16 +53,22 @@ def restore_Y_channel(Y_channel_embedded, original_peak):
     return restored.reshape(Y_channel_embedded.shape)  # 將嵌入後的Ｙ通道復原
 
 def decode_image(img_color):
-   
-    logs = []#collect infos 4 dashboard
+    logs = []  # collect infos for dashboard
 
     img_ycrcb = cv2.cvtColor(img_color, cv2.COLOR_BGR2YCrCb)
     Y_channel_embedded = img_ycrcb[:, :, 0]
 
     # 第一步：直接用 Peak-based 方法提取前 24 個位元（8 bits peak + 16 bits length）
     total_header_bits = 8 + 16
-    print(f"直接使用 Peak-based 提取前 {total_header_bits} 位元（8+16）...")
-    header_bits = extract_bits_from_Y(Y_channel_embedded, original_peak=np.argmax(cv2.calcHist([Y_channel_embedded], [0], None, [256], [0, 256])), total_bits_to_extract=total_header_bits)
+    log_msg = f"直接使用 Peak-based 提取前 {total_header_bits} 位元（8+16）..."
+    print(log_msg)
+    logs.append(log_msg)
+
+    header_bits = extract_bits_from_Y(
+        Y_channel_embedded,
+        original_peak=np.argmax(cv2.calcHist([Y_channel_embedded], [0], None, [256], [0, 256])),
+        total_bits_to_extract=total_header_bits
+    )
 
     peak_bits = header_bits[:8]
     length_bits = header_bits[8:24]
@@ -72,11 +78,16 @@ def decode_image(img_color):
 
     extracted_peak = int(peak_bits, 2)
     message_length = int(length_bits, 2)
-    print(f"從影像中提取 Peak = {extracted_peak}，訊息長度（bits）= {message_length}")
+    log_msg = f"從影像中提取 Peak = {extracted_peak}，訊息長度（bits）= {message_length}"
+    print(log_msg)
+    logs.append(log_msg)
 
     # 第二步：使用正確的 Peak，提取完整資料（8 + 16 + message_length）
     total_bits_to_extract = 8 + 16 + message_length
-    print(f"使用提取到的 Peak，提取完整 {total_bits_to_extract} 位元...")
+    log_msg = f"使用提取到的 Peak，提取完整 {total_bits_to_extract} 位元..."
+    print(log_msg)
+    logs.append(log_msg)
+
     full_bits = extract_bits_from_Y(Y_channel_embedded, extracted_peak, total_bits_to_extract)
     if len(full_bits) < total_bits_to_extract:
         return None, "錯誤：未能提取完整的資料。可能資料已損壞。"
@@ -84,7 +95,9 @@ def decode_image(img_color):
     # 第三步：還原文字
     message_bits = full_bits[24:]
     message = bits_to_string(message_bits)
-    print(f"還原出的訊息：{message}")
+    log_msg = f"還原出的訊息：{message}"
+    print(log_msg)
+    logs.append(log_msg)
 
     # 還原影像
     restored_Y = restore_Y_channel(Y_channel_embedded, extracted_peak)
@@ -97,6 +110,7 @@ def decode_image(img_color):
     hist_embedded = cv2.calcHist([Y_channel_embedded], [0], None, [256], [0, 256])
     hist_restored = cv2.calcHist([restored_Y], [0], None, [256], [0, 256])
 
+    # Return structured data
     return {
         'message': message,
         'restored_img': restored_img,
@@ -105,6 +119,7 @@ def decode_image(img_color):
         'extracted_peak': extracted_peak,
         'logs': logs
     }, None
+
 
 """
 1. 從 Y 通道中提取 Peak bits

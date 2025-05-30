@@ -59,7 +59,6 @@ class HistogramWidget(QWidget):
             ph = (v / maxv) * plot_h
             x = ml + i * bar_w
             y = mt + (plot_h - ph)
-            # Peak bar is always golden
             if i == self.peak_value:
                 col = QColor(*gold, 220)
             elif hasattr(self, 'shifted_indices') and i in self.shifted_indices:
@@ -101,7 +100,7 @@ class HistogramWidget(QWidget):
         painter.setFont(QFont("Comic Sans MS", 12, QFont.Bold))
         painter.drawText(ml, mt - 12, self.title)
 
-        # Border
+        # Border (white in decode mode)
         dash_pen = QPen(border_color, 2, Qt.DashLine)
         painter.setPen(dash_pen)
         painter.drawRoundedRect(1, 1, w - 2, h - 2, 5, 5)
